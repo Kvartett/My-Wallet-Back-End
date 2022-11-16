@@ -6,8 +6,6 @@ import dotenv from "dotenv"
 import { v4 as uuid } from "uuid"
 import bcrypt from "bcrypt"
 
-const token = uuid()
-
 const app = express()
 dotenv.config()
 app.use(cors())
@@ -26,7 +24,7 @@ try {
 const db = mongoClient.db("mywallet")
 const usersCollection = db.collection("users")
 const balanceCollection = db.collection("balance")
-const sessionCollection = db.collection("session")
+const sessionsCollection = db.collection("session")
 
 const userSchema = joi.object({
     email: joi.string().required().min(7).max(50),
@@ -51,8 +49,28 @@ app.post("/auth/sign-up", async (req, res) => {
             return res.status(409).send("E-mail ja cadastrado!")
         }
         const passwordHash = bcrypt.hashSync(password, 12)
-        await usersCollection.insertOne({ email, password: passwordHash, name, token })
+        await usersCollection.insertOne({ email, password: passwordHash, name })
         res.status(201).send("Usuario cadastrado!")
+    } catch (err) {
+        console.log(err)
+        res.sendStatus(500)
+    }
+})
+
+app.post("/auth/sign-in", async (req, res) => {
+    const { email, password } = req.body
+
+    try {
+        const userExist = await usersCollection.findOne({ email: email })
+
+        if (userExist && bcrypt.compareSync(password, userExist.password)) {
+            const token = uuid()
+
+            await sessionsCollection.insertOne({ token, userId: userExist.ObjectID })
+            res.status(200).send({ name: userExist.name, token })
+        } else {
+            res.status(500).send("Usuario não encontrado! E-mail ou senha incorretos.")
+        }
     } catch (err) {
         console.log(err)
         res.sendStatus(500)
