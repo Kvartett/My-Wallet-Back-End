@@ -5,11 +5,14 @@ import { MongoClient } from "mongodb"
 import dotenv from "dotenv"
 import { v4 as uuid } from "uuid"
 import bcrypt from "bcrypt"
+import dayjs from "dayjs"
+
 
 const app = express()
 dotenv.config()
 app.use(cors())
 app.use(express.json())
+dayjs.locale("pt-br")
 
 
 const mongoClient = new MongoClient(process.env.MONGO_URI)
@@ -30,6 +33,13 @@ const userSchema = joi.object({
     email: joi.string().required().min(7).max(50),
     name: joi.string().required().min(3).max(20),
     password: joi.string().required().min(6).max(50)
+})
+
+const balanceSchema = joi.object({
+    email: joi.string().required().min(7).max(50),
+    value: joi.number().required(),
+    type: joi.string().required().valid("positive", "negative"),
+    date: joi.string().required()
 })
 
 app.post("/auth/sign-up", async (req, res) => {
@@ -71,6 +81,32 @@ app.post("/auth/sign-in", async (req, res) => {
         } else {
             res.status(500).send("Usuario não encontrado! E-mail ou senha incorretos.")
         }
+    } catch (err) {
+        console.log(err)
+        res.sendStatus(500)
+    }
+})
+
+app.post("/balance", async (req, res) => {
+    const { value, type } = req.body
+    const { email } = req.headers
+
+    const balance = {
+        email,
+        value,
+        type,
+        date: dayjs().format("DD/MM")
+    }
+
+    try {
+        const { error } = balanceSchema.validate(balance, { abortEarly: false })
+
+        if (error) {
+            const errors = error.details.map((detail) => detail.message)
+            return res.status(422).send(errors)
+        }
+        await balanceCollection.insertOne(balance)
+        res.status(201).send("Balance saved")
     } catch (err) {
         console.log(err)
         res.sendStatus(500)
