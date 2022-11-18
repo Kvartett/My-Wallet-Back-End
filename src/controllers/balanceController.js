@@ -5,11 +5,7 @@ dayjs.locale("pt-br")
 
 export async function postBalance(req, res) {
     const { value, type, email } = req.body
-    const { authorization } = req.headers
-    const token = authorization?.replace("Bearer ", "")
-
-    if (!token) return res.sendStatus(401)
-
+    const token = res.locals.token
     const session = await sessionsCollection.findOne({ token })
 
     if (!session) res.sendStatus(401)
@@ -37,11 +33,7 @@ export async function postBalance(req, res) {
 }
 
 export async function getBalance(req, res) {
-    const { authorization } = req.headers
-    const token = authorization?.replace('Bearer ', '')
-
-    if (!token) return res.sendStatus(401)
-
+    const token = res.locals.token
     const session = await sessionsCollection.findOne({ token })
 
     if (!session) res.sendStatus(401)
