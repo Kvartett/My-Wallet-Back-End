@@ -76,7 +76,7 @@ app.post("/auth/sign-in", async (req, res) => {
         if (userExist && bcrypt.compareSync(password, userExist.password)) {
             const token = uuid()
 
-            await sessionsCollection.insertOne({ token, userId: userExist.ObjectID })
+            await sessionsCollection.insertOne({ token, userId: userExist.ObjectID, email })
             res.status(200).send({ name: userExist.name, token })
         } else {
             res.status(500).send("Usuario não encontrado! E-mail ou senha incorretos.")
@@ -88,8 +88,15 @@ app.post("/auth/sign-in", async (req, res) => {
 })
 
 app.post("/balance", async (req, res) => {
-    const { value, type } = req.body
-    const { email } = req.headers
+    const { value, type, email } = req.body
+    const { authorization } = req.headers
+    const token = authorization?.replace("Bearer ", "")
+
+    if (!token) return res.sendStatus(401)
+
+    const session = await sessionsCollection.findOne({ token })
+
+    if (!session) res.sendStatus(401)
 
     const balance = {
         email,
@@ -113,5 +120,27 @@ app.post("/balance", async (req, res) => {
     }
 })
 
+app.get("/balance", async (req, res) => {
+    const { authorization } = req.headers
+    const token = authorization?.replace('Bearer ', '')
+
+    if (!token) return res.sendStatus(401)
+
+    const session = await sessionsCollection.findOne({ token })
+
+    if (!session) res.sendStatus(401)
+
+    try {
+        const userBalance = await balanceCollection.find({ email: session.email }).toArray()
+        if (userBalance.length === 0) {
+            return res.status(404).send("Não foi encontrado nenhum lançamento!")
+        }
+
+        res.send(userBalance)
+    } catch (err) {
+        console.log(err)
+        res.sendStatus(500)
+    }
+})
 
 app.listen(5000, () => console.log("Server running at Port: 5000"))
