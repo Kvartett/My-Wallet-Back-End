@@ -4,7 +4,7 @@ import dayjs from "dayjs"
 dayjs.locale("pt-br")
 
 export async function postBalance(req, res) {
-    const { value, type, email } = req.body
+    const { value, type, email, description } = req.body
     const token = res.locals.token
     const session = await sessionsCollection.findOne({ token })
 
@@ -12,6 +12,7 @@ export async function postBalance(req, res) {
 
     const balance = {
         email,
+        description,
         value,
         type,
         date: dayjs().format("DD/MM")

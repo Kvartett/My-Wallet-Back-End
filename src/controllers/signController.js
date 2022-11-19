@@ -38,7 +38,7 @@ export async function signIn(req, res) {
             const token = uuid()
 
             await sessionsCollection.insertOne({ token, userId: userExist.ObjectID, email })
-            res.status(200).send({ name: userExist.name, token })
+            res.status(200).send({ name: userExist.name, email: userExist.email, token })
         } else {
             res.status(500).send("Usuario não encontrado! E-mail ou senha incorretos.")
         }
