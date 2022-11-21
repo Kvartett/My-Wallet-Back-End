@@ -1,4 +1,4 @@
-import { balanceSchema } from "../index.js"
+import { balanceSchema } from "../models/balance.model.js"
 import { sessionsCollection, balanceCollection } from "../database/db.js"
 import dayjs from "dayjs"
 dayjs.locale("pt-br")

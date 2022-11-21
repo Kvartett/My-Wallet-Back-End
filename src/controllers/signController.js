@@ -1,6 +1,6 @@
 import { v4 as uuid } from "uuid"
 import bcrypt from "bcrypt"
-import { userSchema } from "../index.js"
+import { userSchema } from "../models/user.model.js"
 import { usersCollection, sessionsCollection } from "../database/db.js"
 
 export async function signUp(req, res) {
